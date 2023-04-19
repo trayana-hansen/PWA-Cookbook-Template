@@ -1,4 +1,4 @@
-const staticCacheName = "site-static-v1";
+const staticCacheName = "site-static-v2";
 
 const assets = [
   "./",
@@ -37,11 +37,18 @@ self.addEventListener("activate", (event) => {
   return;
 });
 self.addEventListener("fetch", (event) => {
-  //console.log('Fetch event', event)
-  //console.log(event.request);
   event.respondWith(
     caches.match(event.request).then((cacheRes) => {
-      return cacheRes || fetch(event.request);
+      return (
+        cacheRes ||
+        fetch(event.request).then((fetchRes) => {
+          return caches.open(dynamicCacheName).then((cache) => {
+            cache.put(event.request.url, fetchRes.clone());
+
+            return fetchRes;
+          });
+        })
+      );
     })
   );
 });
