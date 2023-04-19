@@ -1,5 +1,7 @@
 const staticCacheName = "site-static-v3";
 
+const dynamicCacheName = "site-dynamic-v1";
+
 const assets = [
   "./",
   "./index.html",
@@ -30,21 +32,35 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== staticCacheName).map(caches.delete(key))
+        keys
+          .filter((key) => key !== staticCacheName)
+          .map((key) => caches.delete(key))
       );
     })
   );
   return;
 });
+
 self.addEventListener("fetch", (event) => {
+  // Fix af problem med dynamisk cache og chrome-extension bug
+  if (!(event.request.url.indexOf("http") === 0)) return;
+
+  // Kontroller svar på request
   event.respondWith(
+    /* Håndtering af cache match og dynamisk cache */
+
+    // Kig efter file match i cache
     caches.match(event.request).then((cacheRes) => {
+      // Returner hvis match fra cache - ellers hent fil på server
       return (
         cacheRes ||
         fetch(event.request).then((fetchRes) => {
+          // Åbn dynamisk cache
           return caches.open(dynamicCacheName).then((cache) => {
+            // Tilføj side til dynamisk cache
             cache.put(event.request.url, fetchRes.clone());
 
+            // Returner request
             return fetchRes;
           });
         })
