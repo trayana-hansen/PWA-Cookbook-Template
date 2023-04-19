@@ -15,6 +15,18 @@ const assets = [
   "https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2",
 ];
 
+const limitCacheSize = (cacheName, numAllowedFiles) => {
+  caches.open(cacheName).then((cache) => {
+    cache.keys().then((keys) => {
+      if (keys.length > numberOfAllowedFiles) {
+        cache
+          .delete(keys[0])
+          .then(limitCacheSize(cacheName, numberOfAllowedFiles));
+      }
+    });
+  });
+};
+
 self.addEventListener("install", (event) => {
   //console.log("Service Worker has been installed");
 
@@ -42,6 +54,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  limitCacheSize(dynamicCacheName, 2);
   // Fix af problem med dynamisk cache og chrome-extension bug
   if (!(event.request.url.indexOf("http") === 0)) return;
 
