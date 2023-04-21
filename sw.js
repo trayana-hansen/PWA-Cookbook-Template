@@ -13,6 +13,7 @@ const assets = [
   "./img/dish.png",
   "https://fonts.googleapis.com/icon?family=Material+Icons",
   "https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2",
+  "./pages/fallback.html",
 ];
 
 const limitCacheSize = (cacheName, numAllowedFiles) => {
@@ -55,29 +56,23 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   limitCacheSize(dynamicCacheName, 2);
-  // Fix af problem med dynamisk cache og chrome-extension bug
+
   if (!(event.request.url.indexOf("http") === 0)) return;
-
-  // Kontroller svar på request
   event.respondWith(
-    /* Håndtering af cache match og dynamisk cache */
-
-    // Kig efter file match i cache
-    caches.match(event.request).then((cacheRes) => {
-      // Returner hvis match fra cache - ellers hent fil på server
-      return (
-        cacheRes ||
-        fetch(event.request).then((fetchRes) => {
-          // Åbn dynamisk cache
-          return caches.open(dynamicCacheName).then((cache) => {
-            // Tilføj side til dynamisk cache
-            cache.put(event.request.url, fetchRes.clone());
-
-            // Returner request
-            return fetchRes;
-          });
-        })
-      );
-    })
+    caches
+      .match(event.request)
+      .then((cacheRes) => {
+        return (
+          cacheRes ||
+          fetch(event.request).then((fetchRes) => {
+            return caches.open(dynamicCacheName).then((cache) => {
+              cache.put(event.request.url, fetchRes.clone());
+              limitCacheSize(dynamicCacheName, 2);
+              return fetchRes;
+            });
+          })
+        );
+      })
+      .catch(() => caches.match("/pages/fallback.html"))
   );
 });
