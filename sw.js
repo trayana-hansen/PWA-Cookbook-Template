@@ -19,10 +19,8 @@ const assets = [
 const limitCacheSize = (cacheName, numAllowedFiles) => {
   caches.open(cacheName).then((cache) => {
     cache.keys().then((keys) => {
-      if (keys.length > numberOfAllowedFiles) {
-        cache
-          .delete(keys[0])
-          .then(limitCacheSize(cacheName, numberOfAllowedFiles));
+      if (keys.length > numAllowedFiles) {
+        cache.delete(keys[0]).then(limitCacheSize(cacheName, numAllowedFiles));
       }
     });
   });
@@ -46,7 +44,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys
-          .filter((key) => key !== staticCacheName)
+          .filter((key) => key !== staticCacheName && key !== dynamicCacheName)
           .map((key) => caches.delete(key))
       );
     })
